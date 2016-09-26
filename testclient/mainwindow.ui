@@ -137,6 +137,13 @@
              </widget>
             </item>
             <item>
+             <widget class="QLabel" name="bedTempLB">
+              <property name="text">
+               <string>0.00°C:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QDoubleSpinBox" name="bedTempSB">
               <property name="alignment">
                <set>Qt::AlignCenter</set>
@@ -178,6 +185,13 @@
                 <string>Extruder 1</string>
                </property>
               </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="extTempLB">
+              <property name="text">
+               <string>0.00°C:</string>
+              </property>
              </widget>
             </item>
             <item>
