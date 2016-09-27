@@ -1,0 +1,87 @@
+diff --git a/src/ifirmware.h b/src/ifirmware.h
+index 3b15e6b..2a00fd5 100644
+--- a/src/ifirmware.h
++++ b/src/ifirmware.h
+@@ -10,6 +10,11 @@ public:
+     virtual QString name() const = 0;
+     virtual bool readyForNextCommand(const QString &lastMessage) = 0;
+     // ADD THE METHODS HERE.
++
++    struct PrinterStatus {
++	    QList<float> extruderTemp;
++	    QList<float> BedTemp;
++	};
+ };
+ 
+ Q_DECLARE_INTERFACE(IFirmware, "org.kde.atelier.core.firmware")
+diff --git a/src/plugins/repetierplugin.cpp b/src/plugins/repetierplugin.cpp
+index 16390b9..d52f7d4 100644
+--- a/src/plugins/repetierplugin.cpp
++++ b/src/plugins/repetierplugin.cpp
+@@ -1,6 +1,14 @@
+ #include "repetierplugin.h"
++#include <QLoggingCategory>
+ #include <QString>
+ 
++QString RepetierPlugin::_ok = QStringLiteral("ok");
++QString RepetierPlugin::_wait = QStringLiteral("wait");
++QString RepetierPlugin::_extruderTemp = QStringLiteral("T:");
++QString RepetierPlugin::_bedTemp = QStringLiteral("B:");
++
++Q_LOGGING_CATEGORY(REPETIER_PLUGIN, "org.kde.atelier.core.firmware.repetier");
++
+ QString RepetierPlugin::name() const
+ {
+     return QStringLiteral("Repetier");
+@@ -8,11 +16,29 @@ QString RepetierPlugin::name() const
+ 
+ RepetierPlugin::RepetierPlugin(QObject *parent)
+ {
++	qCDebug(REPETIER_PLUGIN) << "Starting.. " << name();
++}
++
++void extractTemp(const QString &lastMessage)
++{
++	QStringList list = lastMessage.split(QChar(' '));
++	_extruderTemp = 
++}
++
++bool RepetierPlugin::validateCommand(const QString &lastMessage)
++{
++	if (lastMessage.contains(_extruderTemp) || lastMessage.contains(_bedTemp))
++	{
++		extractTemp(lastMessage);
++	} else if (lastMessage.contains(_ok) || lastMessage.contains(_wait)) {
++		return true;
++	}
++	return false;
+ }
+ 
+ bool RepetierPlugin::readyForNextCommand(const QString &lastMessage)
+ {
+-    if (lastMessage.contains("ok") || lastMessage.contains("wait")) {
++    if (lastMessage.contains(_ok) || lastMessage.contains(_wait)) {
+         return true;
+     }
+     return false;
+diff --git a/src/plugins/repetierplugin.h b/src/plugins/repetierplugin.h
+index 1df28dc..9ae3dac 100644
+--- a/src/plugins/repetierplugin.h
++++ b/src/plugins/repetierplugin.h
+@@ -9,9 +9,16 @@ class RepetierPlugin : public QObject, public IFirmware
+     Q_OBJECT
+     Q_PLUGIN_METADATA(IID "org.kde.atelier.core.firmware" FILE "repetier.json")
+     Q_INTERFACES(IFirmware)
++private:
++	static QString _ok;
++	static QString _wait;
++	static QString _extruderTemp;
++	static QString _bedTemp;
+ public:
+     RepetierPlugin(QObject *parent = 0);
+     QString name() const override;
++    void extractTemp(const QString &lastMessage);
++    bool validateCommand(const QString &lastMessage);
+     bool readyForNextCommand(const QString &lastMessage);
+ };
+ 
